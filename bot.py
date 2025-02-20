@@ -3,6 +3,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config import *
 from random import choice
 import requests
+import re
 
 app = Client("ANIFLIX_POST_BOT", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -10,15 +11,22 @@ kitsu_api_url = "https://kitsu.io/api/edge"
 anime_api_url = "https://raw.githubusercontent.com/OtakuFlix/ADATA/refs/heads/main/anime_data.txt"
 user_inputs = {}
 
+season_bullets = {
+    "01": "❶", "02": "❷", "03": "❸", "04": "❹", "05": "❺",
+    "06": "❻", "07": "❼", "08": "❽", "09": "❾", "10": "❿",
+    "11": "⓫", "12": "⓬", "13": "⓭", "14": "⓮", "15": "⓯",
+    "16": "⓰", "17": "⓱", "18": "⓲", "19": "⓳", "20": "⓴"
+}
+
 @app.on_message(filters.command("start"))
 async def start_command(Client, message):
     start_text = (
         "**👋 Welcome to ANIFLIX Bot!**\n\n"
         "🔥 I can help you **find & watch anime episodes** easily.\n"
-        "🎥 Use `/w` to get anime episodes.\n"
-        "📥 Use `/d` to find download links.\n\n"
+        "🎥 Use /w to get anime episodes.\n"
+        "📥 Use /d to find download links.\n\n"
         "⚡ **How to use:**\n"
-        "1️⃣ Send `/w` or `/d` command.\n"
+        "1️⃣ Send /w or /d command.\n"
         "2️⃣ Enter anime name.\n"
         "3️⃣ Enter episode number.\n\n"
         "Enjoy watching! 🚀"
@@ -70,6 +78,10 @@ def fetch_episode_image(anime_id, episode_number):
         return thumbnail.get('original') if thumbnail else None, episode_data.get('synopsis', None)
     return None, None
 
+def extract_season_number(anime_name):
+    match = re.search(r'season (\d+)', anime_name, re.IGNORECASE)
+    return match.group(1).zfill(2) if match else "01"
+
 async def format_update_post(anime_name, episode_number):
     anime_id, poster_image = search_anime(anime_name)
     if not anime_id:
@@ -85,22 +97,36 @@ async def format_update_post(anime_name, episode_number):
         episode_synopsis = episode_synopsis.replace(episode_synopsis[source_start:source_end], "").strip()
 
     synopsis_text = (
-        f"⚠️ Spoiler :\n"
-        f">|| {episode_synopsis or anime_synopsis} ||" if episode_synopsis or anime_synopsis else ""
+        f"├ ⚆ **Spoiler:**\n"
+        f">|| {episode_synopsis or anime_synopsis} ||"
     )
 
     anime_aid = fetch_anime_aid(anime_name)
     watch_url = f"https://aniflix.in/detail?aid={anime_aid}" if anime_aid else None
     download_url = f"https://hindi.aniflix.in/search?q={anime_name.replace(' ', '+')}"
 
+    season_number = extract_season_number(anime_name)
+    season_bullet = season_bullets.get(season_number, "⓪")
+
     post_caption = (
-        f"Watch :- {anime_name} {choice(['🔥', '✨', '🌟'])}\n"
-        f"➡️ New Episode {episode_number} Added ✔️\n"
-        f"⭐ IMDB Rating {kitsu_rating}/10 🔥\n"
+        f"> ⛩ **{anime_name}**\n"
+        f"┌───────────────────\n"
+        f"├ {season_bullet} 𝗦𝗲𝗮𝘀𝗼𝗻 : {season_number}\n"
+        f"├ ⚅ 𝗘𝗽𝗶𝘀𝗼𝗱𝗲 : {episode_number}\n"
+        f"├ 𖦤 𝗔𝘂𝗱𝗶𝗼 : 𝗛𝗶𝗻𝗱𝗶 #𝗢𝗳𝗳𝗶𝗰𝗶𝗮𝗹\n"
+        f"├ ⌬ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 : 𝟭𝟬𝟴𝟬𝗽\n"
+        f"├ ✦ 𝗥𝗮𝘁𝗶𝗻𝗴 : {kitsu_rating}/10 ‧ 𝗜𝗠𝗗𝗯\n"
+        f"├───────────────────\n"
         f"{synopsis_text}\n"
-        f"🗓 {'More episodes on the way, stay tuned' if airing_status == 'current' else 'Season Over ❌'}\n"
-        f"@ANIFLIX_OFFICIAL"
+        f"├───────────────────\n"
+        f"├ ✧ Powered By ‧ [𝗔𝗡𝗜𝗙𝗟𝗜𝗫](https://t.me/ANIFLIX_OFFICIAL) ✧\n"
+        f"├ ⌲ Share ‧ [𝗦𝗛𝗔𝗥𝗘 𝗔𝗡𝗜𝗙𝗟𝗜𝗫](https://t.me/share/url?url=%F0%9F%8E%89+Join+@Aniflix_Official+for+the+best+Hindi+Dubbed+Anime!+Don't+miss+out+on+your+favorites,+all+in+one+place!+%F0%9F%8E%AC%E2%9C%A8) ✧\n"
+        f"└───────────────────\n"
     )
+
+    # Ensure the caption length does not exceed the limit
+    if len(post_caption) > 1024:
+        post_caption = post_caption[:500] + "..."
 
     return post_caption, episode_image, watch_url, download_url
 
