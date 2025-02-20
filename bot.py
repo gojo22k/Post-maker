@@ -130,14 +130,11 @@ async def finalize_post(client, message, user_data):
 
     post_caption, episode_image, watch_url, download_url = await format_update_post(anime_name, episode_number)
 
-    if not watch_url:
-        await message.reply_text(f"Anime '{anime_name}' not found in the database.")
-        return
+    buttons = []
 
-    buttons = [
-        [InlineKeyboardButton("✦ ＷＡＴＣＨ  ＮＯＷ ✦", url=watch_url)]
-    ]
-
+    if watch_url:  
+        buttons.append([InlineKeyboardButton("✦ ＷＡＴＣＨ  ＮＯＷ ✦", url=watch_url)])
+    
     if command == "d":
         buttons.append([InlineKeyboardButton("✦ D O W N L O A D ✦", url=download_url)])
 
