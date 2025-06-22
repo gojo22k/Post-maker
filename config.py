@@ -1,4 +1,4 @@
 import os
-BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+BOT_TOKEN = os.getenv('BOT_TOKEN', '7248082140:AAHQYkUblK05zfhQnO3nJMLBXoyhRY4ViJ8')
 API_ID = "24817837"
 API_HASH = "acd9f0cc6beb08ce59383cf250052686"
