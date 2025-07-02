@@ -1,3 +1,5 @@
 pyrogram
 requests
 tgcrypto
+fastapi
+uvicorn
