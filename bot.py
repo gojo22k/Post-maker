@@ -6,9 +6,31 @@ import requests
 import re
 import json
 from difflib import SequenceMatcher
+import threading
+from fastapi import FastAPI
+import uvicorn
+from datetime import datetime
 
+# --------------------- FastAPI Health App ---------------------
+health_app = FastAPI()
+start_time = datetime.now()
+
+@health_app.get("/")
+def health_check():
+    return {"status": "ok", "message": "ANIFLIX bot is live on port 10000 🚀"}
+
+@health_app.get("/uptime")
+def get_uptime():
+    uptime = datetime.now() - start_time
+    return {"uptime": str(uptime)}
+
+def run_health_check():
+    uvicorn.run(health_app, host="0.0.0.0", port=10000)
+
+# --------------------- Pyrogram Bot ---------------------
 app = Client("ANIFLIX_POST_BOT", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# --------------------- Your Bot Logic Below ---------------------
 kitsu_api_url = "https://kitsu.io/api/edge"
 anilist_api_url = "https://graphql.anilist.co"
 anime_api_url = "https://raw.githubusercontent.com/OtakuFlix/ADATA/refs/heads/main/anime_data.txt"
@@ -464,5 +486,12 @@ async def finalize_post(client, message, user_data):
             "Please try again with `/w` or `/d` command."
         )
 
-if __name__ == "__main__":
+# --------------------- Run Both Apps ---------------------
+def run_telebot():
     app.run()
+
+if __name__ == "__main__":
+    t1 = threading.Thread(target=run_telebot)
+    t2 = threading.Thread(target=run_health_check)
+    t1.start()
+    t2.start()
