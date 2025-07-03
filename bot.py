@@ -10,7 +10,7 @@ import threading
 from fastapi import FastAPI
 import uvicorn
 from datetime import datetime
-
+import asyncio
 # --------------------- FastAPI Health App ---------------------
 health_app = FastAPI()
 start_time = datetime.now()
@@ -487,8 +487,12 @@ async def finalize_post(client, message, user_data):
         )
 
 # --------------------- Run Both Apps ---------------------
+async def run_telebot_async():
+    await app.start()
+    await app.idle()
+
 def run_telebot():
-    app.run()
+    asyncio.run(run_telebot_async())
 
 if __name__ == "__main__":
     t1 = threading.Thread(target=run_telebot)
