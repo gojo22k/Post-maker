@@ -3,3 +3,4 @@ requests
 tgcrypto
 fastapi
 uvicorn
+asyncio
