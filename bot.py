@@ -6,31 +6,12 @@ import requests
 import re
 import json
 from difflib import SequenceMatcher
-import threading
-from fastapi import FastAPI
-import uvicorn
-from datetime import datetime
 import asyncio
-# --------------------- FastAPI Health App ---------------------
-health_app = FastAPI()
-start_time = datetime.now()
-
-@health_app.get("/")
-def health_check():
-    return {"status": "ok", "message": "ANIFLIX bot is live on port 10000 🚀"}
-
-@health_app.get("/uptime")
-def get_uptime():
-    uptime = datetime.now() - start_time
-    return {"uptime": str(uptime)}
-
-def run_health_check():
-    uvicorn.run(health_app, host="0.0.0.0", port=10000)
-
-# --------------------- Pyrogram Bot ---------------------
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
+# Ensure the bot token is set correctly
 app = Client("ANIFLIX_POST_BOT", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# --------------------- Your Bot Logic Below ---------------------
 kitsu_api_url = "https://kitsu.io/api/edge"
 anilist_api_url = "https://graphql.anilist.co"
 anime_api_url = "https://raw.githubusercontent.com/OtakuFlix/ADATA/refs/heads/main/anime_data.txt"
@@ -45,6 +26,20 @@ season_bullets = {
 
 # Cache for anime suggestions
 anime_cache = []
+
+# Health check endpoint
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'OK')
+
+# Function to run the health check server
+def run_health_check_server():
+    server_address = ('', 10000)
+    httpd = HTTPServer(server_address, HealthCheckHandler)
+    httpd.serve_forever()
 
 async def load_anime_cache():
     """Load anime list for suggestions"""
@@ -486,16 +481,7 @@ async def finalize_post(client, message, user_data):
             "Please try again with `/w` or `/d` command."
         )
 
-# --------------------- Run Both Apps ---------------------
-async def run_telebot_async():
-    await app.start()
-    await app.idle()
-
-def run_telebot():
-    asyncio.run(run_telebot_async())
-
 if __name__ == "__main__":
-    t1 = threading.Thread(target=run_telebot)
-    t2 = threading.Thread(target=run_health_check)
-    t1.start()
-    t2.start()
+    # Start the health check server in a separate thread
+    threading.Thread(target=run_health_check_server, daemon=True).start()
+    app.run()
