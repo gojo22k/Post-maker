@@ -24,8 +24,6 @@ season_bullets = {
     "16": "⓰", "17": "⓱", "18": "⓲", "19": "⓳", "20": "⓴"
 }
 
-# Cache for anime suggestions
-anime_cache = []
 
 # Health check endpoint
 class HealthCheckHandler(BaseHTTPRequestHandler):
@@ -142,9 +140,8 @@ def search_anilist(anime_name):
 
 @app.on_message(filters.command("start"))
 async def start_command(Client, message):
-    global anime_cache
-    if not anime_cache:
-        anime_cache = await load_anime_cache()
+    anime_cache = await load_anime_cache()
+
     
     start_text = (
         "**👋 Welcome to ANIFLIX Bot!**\n\n"
@@ -373,9 +370,8 @@ async def format_update_post(anime_name, episode_number):
 
 @app.on_message(filters.command("w") | filters.command("d"))
 async def request_anime_name(client, message):
-    global anime_cache
-    if not anime_cache:
-        anime_cache = await load_anime_cache()
+    anime_cache = await load_anime_cache()
+
     
     user_inputs[message.from_user.id] = {"command": message.command[0]}
     await message.reply_text("Please send me the anime name:")
@@ -396,35 +392,35 @@ async def capture_input(client, message):
     user_id = message.from_user.id
     if user_id not in user_inputs:
         return
-    
-    global anime_cache
+
     user_data = user_inputs[user_id]
-    
+
+    # Always load fresh anime list
+    anime_cache = await load_anime_cache()
+
     if "anime_name" not in user_data:
         anime_input = message.text.strip()
-        
+
         # Check for exact match first
         exact_match = None
         for anime in anime_cache:
             if anime.lower() == anime_input.lower():
                 exact_match = anime
                 break
-        
+
         if exact_match:
             user_data["anime_name"] = exact_match
             await message.reply_text("Please send me the episode number:")
         else:
             # Get suggestions for similar names
             suggestions = get_anime_suggestions(anime_input, anime_cache)
-            
+
             if suggestions:
-                buttons = []
-                for suggestion in suggestions[:5]:  # Limit to 5 suggestions
-                    buttons.append([InlineKeyboardButton(
-                        f"📺 {suggestion}", 
-                        callback_data=f"suggest_{suggestion}"
-                    )])
-                
+                buttons = [
+                    [InlineKeyboardButton(f"📺 {s}", callback_data=f"suggest_{s}")]
+                    for s in suggestions[:5]
+                ]
+
                 await message.reply_text(
                     f"🤔 **Did you mean:**\n"
                     f"I couldn't find exact match for **'{anime_input}'**\n"
@@ -436,7 +432,7 @@ async def capture_input(client, message):
                     f"❌ **Sorry!** I couldn't find any anime similar to **'{anime_input}'**\n\n"
                     "Please try again with a different name:"
                 )
-    
+
     elif "episode_number" not in user_data:
         try:
             episode_num = int(message.text.strip())
