@@ -87,10 +87,15 @@ def get_aid_for_anime(anime_name):
         if resp.status_code == 200:
             for anime in resp.json():
                 if anime["name"].lower() == anime_name.lower():
-                    return anime["name"], anime.get("aid")
+                    # Get the first poster URL if available
+                    poster_url = None
+                    if 'poster' in anime and anime['poster']:
+                        posters = [p.strip() for p in anime['poster'].split(',')]
+                        poster_url = posters[0] if posters else None
+                    return anime["name"], anime.get("aid"), poster_url
     except Exception as e:
         print("AID fetch error:", e)
-    return None, None
+    return None, None, None
 
 # Step 2: Get anilist id from anilist search
 def get_anilist_id(anime_name):
@@ -203,8 +208,8 @@ def search_anilist_legacy(anime_name):
 
 # Unified post formatter using new workflow
 async def format_update_post(anime_name, episode_number):
-    # 1. Get official name + aid
-    official_name, anime_aid = get_aid_for_anime(anime_name)
+    # 1. Get official name, aid, and poster URL
+    official_name, anime_aid, poster_url = get_aid_for_anime(anime_name)
     if not official_name:
         return f"No anime found for '{anime_name}'.", None, None, None
 
@@ -219,7 +224,7 @@ async def format_update_post(anime_name, episode_number):
             anime_title = titles.get('en') or titles.get('x-jat') or official_name
             ep_title = (ep_info and ep_info.get('title', {}).get('en')) or ''
             ep_summary = ep_info.get('overview') if ep_info else "No synopsis available."
-            ep_image = ep_info.get('image') if ep_info else None
+            ep_image = (ep_info.get('image') if ep_info else None) or poster_url
             ep_rating = ep_info.get('rating', "N/A") if ep_info else "N/A"
             season_number = ep_info.get('seasonNumber', 1) if ep_info else 1
             season_bullet = season_bullets.get(str(season_number).zfill(2), "⓪")
