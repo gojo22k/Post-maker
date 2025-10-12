@@ -313,7 +313,7 @@ async def format_watch_post(anime_name, episode_number):
                 elif poster_url and validate_image_url(poster_url):
                     final_image = poster_url
                 
-                watch_url = f"https://aniflix.in/detail?aid={anime_aid}" if anime_aid else None
+                watch_url = f"https://aniflix.in/anime/info/{anime_aid}" if anime_aid else None
                 
                 post_caption = (
                     f"⛩ **{anime_title}**\n"
@@ -394,7 +394,7 @@ async def format_watch_post(anime_name, episode_number):
         synopsis = truncate_synopsis(format_spoiler_text(synopsis), 200)
         season_number = extract_season_number(official_name)
         season_bullet = season_bullets.get(season_number, "⓪")
-        watch_url = f"https://aniflix.in/detail?aid={anime_aid}" if anime_aid else None
+        watch_url = f"https://aniflix.in/anime/info/{anime_aid}" if anime_aid else None
         
         post_caption = (
             f"> ⛩ **{official_name}**\n"
