@@ -36,8 +36,25 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(b'OK')
+        self.wfile.write(b'OK - Bot is alive!')
 
+def keep_alive_pinger():
+    """Ping the health check endpoint every 5 minutes to prevent sleep"""
+    time.sleep(60)  # Wait 1 minute before starting
+    
+    # Get the app URL from environment or use localhost for testing
+    app_url = os.getenv('APP_URL', 'http://localhost:10000')
+    
+    while True:
+        try:
+            response = requests.get(app_url, timeout=10)
+            print(f"[Keep-Alive] Pinged at {time.strftime('%Y-%m-%d %H:%M:%S')} - Status: {response.status_code}")
+        except Exception as e:
+            print(f"[Keep-Alive] Ping failed: {str(e)}")
+        
+        # Sleep for 5 minutes (300 seconds)
+        time.sleep(300)
+        
 def run_health_check_server():
     server_address = ('', 10000)
     httpd = HTTPServer(server_address, HealthCheckHandler)
@@ -1066,4 +1083,13 @@ async def finalize_post(client, message, user_data):
 if __name__ == "__main__":
     # Start the health check server in a separate thread
     threading.Thread(target=run_health_check_server, daemon=True).start()
+    
+    # Start keep-alive pinger in a separate thread
+    keep_alive_thread = threading.Thread(target=keep_alive_pinger)
+    keep_alive_thread.daemon = True
+    keep_alive_thread.start()
+    
+    print("Bot is starting...")
+    print("Health check server and keep-alive pinger are running on port 10000")
+    
     app.run()
