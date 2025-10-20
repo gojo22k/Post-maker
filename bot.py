@@ -52,8 +52,8 @@ def keep_alive_pinger():
         except Exception as e:
             print(f"[Keep-Alive] Ping failed: {str(e)}")
         
-        # Sleep for 5 minutes (300 seconds)
-        time.sleep(300)
+        # Sleep for 5 minutes (250 seconds)
+        time.sleep(250)
         
 def run_health_check_server():
     server_address = ('', 10000)
